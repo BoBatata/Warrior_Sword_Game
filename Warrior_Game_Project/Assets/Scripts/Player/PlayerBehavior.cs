@@ -138,6 +138,7 @@ public class PlayerBehavior : MonoBehaviour
         playerControls.Movement.Jump.canceled += HandleJump;
 
         playerControls.Combat.SimpleAttack.started += HandleAttack;
+        playerControls.Combat.SimpleAttack.canceled += HandleAttack;
     }
 
     private void GetAnimatorParametersHash()
