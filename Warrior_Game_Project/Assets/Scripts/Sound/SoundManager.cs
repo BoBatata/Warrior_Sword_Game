@@ -8,7 +8,6 @@ public class SoundManager : MonoBehaviour
 {
     private static SoundManager instance;
 
-    [SerializeField] private AudioClip[] enviromentSound;
     [SerializeField] private float volume = 100;
 
     private AudioSource audioSource;
@@ -29,20 +28,9 @@ public class SoundManager : MonoBehaviour
         audioSource = GetComponent<AudioSource>();
     }
 
-    private void Start()
-    {
-        PlaySoundClip(enviromentSound[0]);
-    }
-
     private void Update()
     {
-        
-    }
-
-    public void PlaySoundClip(AudioClip clip)
-    {
-        audioSource.clip = clip;
-        audioSource.Play();
+        audioSource.volume = volume / 2;
     }
 
 }
