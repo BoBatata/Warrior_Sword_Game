@@ -10,17 +10,9 @@ public class EnviromentSoundManager : MonoBehaviour
     private void Awake()
     {
         audioSource = GetComponent<AudioSource>();
-    }
-
-    void Start()
-    {
-        PlaySoundClip(enviromentSound[0]);
-    }
-
-    public void PlaySoundClip(AudioClip clip)
-    {
-        audioSource.clip = clip;
+        audioSource.clip = (enviromentSound[0]);
         audioSource.Play();
     }
+
 
 }

@@ -4,15 +4,22 @@ using UnityEngine;
 
 public class PlayerSound : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    [SerializeField] private AudioClip[] playerSoundClips;
+
+    public static PlayerSound instance;
+
+    private void PlayWalkSound()
     {
-        
+        SoundManager.instance.PlayerSoundClip(playerSoundClips[0]);
+    }
+    public void PlayJumpSound()
+    {
+        SoundManager.instance.PlayerSoundClip(playerSoundClips[1]);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void PlayAttackSound()
     {
-        
+        SoundManager.instance.PlayerSoundClip(playerSoundClips[2]);
     }
+
 }

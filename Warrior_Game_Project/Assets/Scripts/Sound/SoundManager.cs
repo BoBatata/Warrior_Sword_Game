@@ -6,9 +6,9 @@ using UnityEngine;
 
 public class SoundManager : MonoBehaviour
 {
-    private static SoundManager instance;
-
     [SerializeField] private float volume = 100;
+
+    public static SoundManager instance;
 
     private AudioSource audioSource;
 
@@ -30,7 +30,12 @@ public class SoundManager : MonoBehaviour
 
     private void Update()
     {
-        audioSource.volume = volume / 2;
+        audioSource.volume = volume / 100;
     }
 
+    public void PlayerSoundClip(AudioClip clip)
+    {
+        audioSource.clip = clip;
+        audioSource.Play();
+    }
 }
