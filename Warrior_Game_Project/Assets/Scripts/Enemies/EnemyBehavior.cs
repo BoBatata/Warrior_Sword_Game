@@ -8,12 +8,12 @@ public class EnemyBehavior : MonoBehaviour
     [SerializeField, Range(0f, 10f)] private float velocity;
     [SerializeField] private float distanceThreshold;
 
-    private Rigidbody2D rigidbody;
+    private Rigidbody2D rigidbodyEnemy;
     private Animator animator;
 
     private void Awake()
     {
-        rigidbody = GetComponent<Rigidbody2D>();
+        rigidbodyEnemy = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
     }
 
@@ -23,7 +23,7 @@ public class EnemyBehavior : MonoBehaviour
         if (distanceFromPlayer <= distanceThreshold)
         {
             Vector2 playerPosition = PlayerBehavior.instance.GetPlayerPosition();
-            Vector2.MoveTowards(transform.position, playerPosition, 0.5f);
+            //Vector2.MoveTowards(transform.position, playerPosition, 0.5f);
             transform.Translate(new Vector2(playerPosition.x, 0).normalized * velocity * Time.deltaTime * -1);
         }
     }

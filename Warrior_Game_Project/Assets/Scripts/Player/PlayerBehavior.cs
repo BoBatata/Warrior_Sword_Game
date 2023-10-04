@@ -17,7 +17,6 @@ public class PlayerBehavior : MonoBehaviour
     #region PlayerComponents
     private Animator animator;
     private Rigidbody2D rigidBody;
-    private SpriteRenderer spriteRenderer;
     private PlayerSound playerSounds;
     #endregion
 
@@ -31,6 +30,11 @@ public class PlayerBehavior : MonoBehaviour
     #region Combat
     private bool canAttack;
     private bool isAttacking;
+
+    [Header("Attack properties")]
+    [SerializeField] private Transform hitPoint;
+    [SerializeField] private float attackRange;
+    [SerializeField] private LayerMask attackMask;
     #endregion
 
     #region Animatior variables
@@ -43,6 +47,7 @@ public class PlayerBehavior : MonoBehaviour
     #region SerializedField Variables
     [SerializeField] private float velocity;
     [SerializeField] private float jumpForce;
+
     #endregion
 
     private void Awake()
@@ -68,23 +73,20 @@ public class PlayerBehavior : MonoBehaviour
         MovePlayer();
         AnimatePlayer();
     }
-    private void GetInputInfo(InputAction.CallbackContext inputContext)
-    {
-        moveDirection.x = inputContext.ReadValue<float>();
-        isMoving = moveDirection.x != 0;
-    }
 
     private void MovePlayer()
     {
         if (moveDirection.x > 0)
         {
-            spriteRenderer.flipX = false;
+            transform.rotation = new Quaternion(0, -180, 0, 0);
         }
         else if (moveDirection.x < 0)
         {
-            spriteRenderer.flipX = true;
+            transform.rotation = new Quaternion(0, 0, 0, 0);
         }
-        transform.Translate(moveDirection * velocity * Time.deltaTime);
+        isMoving = moveDirection.x != 0;
+        moveDirection.x = playerControls.Movement.Move.ReadValue<float>();
+        rigidBody.velocity = moveDirection * velocity;
     }
 
     private void HandleJump(InputAction.CallbackContext inputContext)
@@ -102,6 +104,22 @@ public class PlayerBehavior : MonoBehaviour
     private void HandleAttack(InputAction.CallbackContext inputContext)
     {
         isAttacking = inputContext.ReadValueAsButton();
+    }
+
+    private void AttackHandler()
+    {
+        Collider2D[] hittedEnemies = Physics2D.OverlapCircleAll(hitPoint.position, attackRange, attackMask);
+        if (isAttacking == true)
+        {
+
+            foreach (Collider2D hittedEnemie in hittedEnemies)
+            {
+                if (hittedEnemie.GetComponent<EnemyBehavior>())
+                {
+                    Destroy(hittedEnemie.gameObject);
+                }
+            }
+        }
     }
 
     private void AnimatePlayer()
@@ -138,16 +156,12 @@ public class PlayerBehavior : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         rigidBody = GetComponent<Rigidbody2D>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
         playerSounds = GetComponent<PlayerSound>();
     }
 
     private void SetInputParameters()
     {
         playerControls = new PlayerControls();
-        playerControls.Movement.Move.started += GetInputInfo;
-        playerControls.Movement.Move.performed += GetInputInfo;
-        playerControls.Movement.Move.canceled += GetInputInfo;
 
         playerControls.Movement.Jump.started += HandleJump;
         playerControls.Movement.Jump.canceled += HandleJump;
@@ -166,7 +180,7 @@ public class PlayerBehavior : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         TilemapRenderer tileRenderer = collision.collider.GetComponent<TilemapRenderer>();
-        if (tileRenderer.sortingLayerName == "Enviroment")
+        if (tileRenderer.sortingLayerName == "Enviroment") 
         {
             canJump = true;
             canAttack = true;
@@ -186,10 +200,18 @@ public class PlayerBehavior : MonoBehaviour
 
     private void OnDisable()
     {
-        playerControls.Movement.Move.started -= GetInputInfo;
-        playerControls.Movement.Move.performed -= GetInputInfo;
-        playerControls.Movement.Move.canceled -= GetInputInfo;
+        playerControls.Movement.Jump.started += HandleJump;
+        playerControls.Movement.Jump.canceled += HandleJump;
+
+        playerControls.Combat.SimpleAttack.started += HandleAttack;
+        playerControls.Combat.SimpleAttack.canceled += HandleAttack;
         playerControls.Disable();
     }
     #endregion
+    private void OnDrawGizmos()
+    {
+        if (hitPoint == null) return;
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(hitPoint.position, attackRange);
+    }
 }
