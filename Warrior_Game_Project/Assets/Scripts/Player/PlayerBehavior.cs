@@ -11,6 +11,7 @@ using UnityEngine.Tilemaps;
 
 public class PlayerBehavior : MonoBehaviour
 {
+    private const float gravityValue = -9.81f;  
     private PlayerControls playerControls;
     public static PlayerBehavior instance; 
     #region Private Variables
@@ -22,6 +23,7 @@ public class PlayerBehavior : MonoBehaviour
 
     #region Movement variables
     private Vector2 moveDirection;
+    private float initialGravityScale;
     private bool isMoving;
     private bool isJumping;
     private bool canJump;
@@ -46,7 +48,13 @@ public class PlayerBehavior : MonoBehaviour
 
     #region SerializedField Variables
     [SerializeField] private float velocity;
+
+    [Header("Jump Properties")]
     [SerializeField] private float jumpForce;
+
+    [SerializeField] private float jumpFallGravityMultiplier = 3f;
+    [SerializeField] private Transform groundCheckPos;
+    [SerializeField] private LayerMask groundLayer;
 
     #endregion
 
@@ -72,6 +80,7 @@ public class PlayerBehavior : MonoBehaviour
     {
         MovePlayer();
         AnimatePlayer();
+        GravityHandler();
     }
 
     private void MovePlayer()
@@ -84,18 +93,17 @@ public class PlayerBehavior : MonoBehaviour
         {
             transform.rotation = new Quaternion(0, 0, 0, 0);
         }
-        isMoving = moveDirection.x != 0;
         moveDirection.x = playerControls.Movement.Move.ReadValue<float>();
-        rigidBody.velocity = moveDirection * velocity;
+        rigidBody.velocity = new Vector2(moveDirection.x * velocity, rigidBody.velocity.y);
+        isMoving = moveDirection.x != 0;
     }
 
     private void HandleJump(InputAction.CallbackContext inputContext)
     {
-        isJumping = inputContext.ReadValueAsButton();
-        if (isJumping == true && canJump == true)
+        if (IsGrounded())
         {
-            rigidBody.AddForce(Vector2.up * jumpForce);
-            canJump = false;
+            rigidBody.velocity += Vector2.up * jumpForce;
+            isJumping = true;
             canAttack = false;
             playerSounds.PlayJumpSound();
         }
@@ -104,6 +112,10 @@ public class PlayerBehavior : MonoBehaviour
     private void HandleAttack(InputAction.CallbackContext inputContext)
     {
         isAttacking = inputContext.ReadValueAsButton();
+        if (isAttacking == true && canAttack == true)
+        {
+            animator.SetTrigger(attackAnimatorHash);
+        }
     }
 
     private void AttackHandler()
@@ -177,20 +189,29 @@ public class PlayerBehavior : MonoBehaviour
         attackAnimatorHash = Animator.StringToHash("attack");
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        TilemapRenderer tileRenderer = collision.collider.GetComponent<TilemapRenderer>();
-        if (tileRenderer.sortingLayerName == "Enviroment") 
-        {
-            canJump = true;
-            canAttack = true;
-        }
-    }
-
     public Vector2 GetPlayerPosition()
     {
         return transform.position;
     }
+    private void GravityHandler()
+    {   
+        if (IsGrounded())
+        {
+            isJumping = false;
+            canAttack = true;
+            rigidBody.gravityScale = initialGravityScale;
+        }
+        else if (isJumping && rigidBody.velocity.y < 0f)
+        {
+            isJumping = true;
+            rigidBody.gravityScale = initialGravityScale * jumpFallGravityMultiplier;
+        }
+        else
+        {
+            isJumping = true;
+        }
+    }
+
 
     #region OnEnable/Disable Functions   
     private void OnEnable()
@@ -208,10 +229,17 @@ public class PlayerBehavior : MonoBehaviour
         playerControls.Disable();
     }
     #endregion
+    private bool IsGrounded()
+    {
+        bool isGrounded = Physics2D.OverlapBox(groundCheckPos.position, new Vector3(1, 0.2f), groundLayer);
+        return isGrounded;
+    }
     private void OnDrawGizmos()
     {
         if (hitPoint == null) return;
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(hitPoint.position, attackRange);
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireCube(groundCheckPos.position, new Vector3(1, 0.2f));
     }
 }
