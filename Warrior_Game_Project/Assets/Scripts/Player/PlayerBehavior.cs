@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.InputSystem;
@@ -14,6 +15,7 @@ public class PlayerBehavior : MonoBehaviour
     private const float gravityValue = -9.81f;  
     private PlayerControls playerControls;
     public static PlayerBehavior instance; 
+
     #region Private Variables
     #region PlayerComponents
     private Animator animator;
@@ -32,6 +34,10 @@ public class PlayerBehavior : MonoBehaviour
     #region Combat
     private bool canAttack;
     private bool isAttacking;
+
+    [Header("Player Status")]
+    [SerializeField] private int playerLifes = 3;
+    [SerializeField] private float playerScore;
 
     [Header("Attack properties")]
     [SerializeField] private Transform hitPoint;
@@ -52,7 +58,7 @@ public class PlayerBehavior : MonoBehaviour
     [Header("Jump Properties")]
     [SerializeField] private float jumpForce;
 
-    [SerializeField] private float jumpFallGravityMultiplier = 3f;
+    [SerializeField, Range(1f, 10f)] private float jumpFallGravityMultiplier = 3f;
     [SerializeField] private Transform groundCheckPos;
     [SerializeField] private LayerMask groundLayer;
 
@@ -67,13 +73,15 @@ public class PlayerBehavior : MonoBehaviour
         }
         else
         {
-            Destroy(instance);
+            Destroy(this.gameObject);
         }
         #endregion
 
         GetPlayerComponents();
         SetInputParameters();
         GetAnimatorParametersHash();
+
+        initialGravityScale = rigidBody.gravityScale;
     }
 
     private void Update()
@@ -85,13 +93,15 @@ public class PlayerBehavior : MonoBehaviour
 
     private void MovePlayer()
     {
+        if (moveDirection == null) return;
+
         if (moveDirection.x > 0)
         {
             transform.rotation = new Quaternion(0, -180, 0, 0);
         }
         else if (moveDirection.x < 0)
         {
-            transform.rotation = new Quaternion(0, 0, 0, 0);
+            transform.rotation = quaternion.identity;
         }
         moveDirection.x = playerControls.Movement.Move.ReadValue<float>();
         rigidBody.velocity = new Vector2(moveDirection.x * velocity, rigidBody.velocity.y);
@@ -121,15 +131,15 @@ public class PlayerBehavior : MonoBehaviour
     private void AttackHandler()
     {
         Collider2D[] hittedEnemies = Physics2D.OverlapCircleAll(hitPoint.position, attackRange, attackMask);
-        if (isAttacking == true)
+        foreach (Collider2D hittedEnemie in hittedEnemies)
         {
-
-            foreach (Collider2D hittedEnemie in hittedEnemies)
+             if (hittedEnemie.TryGetComponent(out EnemyCrabBehavior enemyCrab))
+             {
+                enemyCrab.PlayDeathSound();
+             }
+            if (hittedEnemie.TryGetComponent(out EnemyOctuBehavior enemyOctu))
             {
-                if (hittedEnemie.GetComponent<EnemyBehavior>())
-                {
-                    Destroy(hittedEnemie.gameObject);
-                }
+                enemyOctu.PlayDeathSound();
             }
         }
     }
@@ -145,11 +155,11 @@ public class PlayerBehavior : MonoBehaviour
             animator.SetBool(isMovingAnimatorHash, false);
         }
 
-        if (isJumping == true && animator.GetBool(isJumpingAnimatorHash) == false)
+        if (!IsGrounded() && animator.GetBool(isJumpingAnimatorHash) == false)
         {
             animator.SetBool(isJumpingAnimatorHash, true);
         }
-        else if (animator.GetBool(isJumpingAnimatorHash) == true && isJumping == false && canJump == true)
+        else if (animator.GetBool(isJumpingAnimatorHash) == true && IsGrounded())
         {
             animator.SetBool(isJumpingAnimatorHash, false);
         }
@@ -193,6 +203,21 @@ public class PlayerBehavior : MonoBehaviour
     {
         return transform.position;
     }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        print("Vc tem:" + playerLifes);
+        if (collision.collider.CompareTag("Enemy") || collision.collider.CompareTag("Projectile"))
+        {
+            playerLifes--;
+        }
+        else if (playerLifes <= 0)
+        {
+            Destroy(this.gameObject);
+        }
+    }
+
+
     private void GravityHandler()
     {   
         if (IsGrounded())
@@ -206,12 +231,7 @@ public class PlayerBehavior : MonoBehaviour
             isJumping = true;
             rigidBody.gravityScale = initialGravityScale * jumpFallGravityMultiplier;
         }
-        else
-        {
-            isJumping = true;
-        }
     }
-
 
     #region OnEnable/Disable Functions   
     private void OnEnable()
@@ -221,17 +241,18 @@ public class PlayerBehavior : MonoBehaviour
 
     private void OnDisable()
     {
-        playerControls.Movement.Jump.started += HandleJump;
-        playerControls.Movement.Jump.canceled += HandleJump;
+        playerControls.Movement.Jump.started -= HandleJump;
+        playerControls.Movement.Jump.canceled -= HandleJump;
 
-        playerControls.Combat.SimpleAttack.started += HandleAttack;
-        playerControls.Combat.SimpleAttack.canceled += HandleAttack;
+        playerControls.Combat.SimpleAttack.started -= HandleAttack;
+        playerControls.Combat.SimpleAttack.canceled -= HandleAttack;
         playerControls.Disable();
     }
     #endregion
+
     private bool IsGrounded()
     {
-        bool isGrounded = Physics2D.OverlapBox(groundCheckPos.position, new Vector3(1, 0.2f), groundLayer);
+        bool isGrounded = Physics2D.OverlapBox(groundCheckPos.position, new Vector3(0.5f, 0.2f), groundLayer);
         return isGrounded;
     }
     private void OnDrawGizmos()
@@ -240,6 +261,6 @@ public class PlayerBehavior : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(hitPoint.position, attackRange);
         Gizmos.color = Color.blue;
-        Gizmos.DrawWireCube(groundCheckPos.position, new Vector3(1, 0.2f));
+        Gizmos.DrawWireCube(groundCheckPos.position, new Vector3(0.5f, 0.2f));
     }
 }
