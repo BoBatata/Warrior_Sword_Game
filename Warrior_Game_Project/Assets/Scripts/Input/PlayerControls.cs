@@ -81,8 +81,8 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": true
                 },
                 {
-                    ""name"": ""[Gamepad]"",
-                    ""id"": ""997733b0-987e-43d3-a880-d21ff6e2083d"",
+                    ""name"": ""[Gamepad] Left/Right"",
+                    ""id"": ""b03eaf5d-3fb9-4880-9e6f-b0dd185f2801"",
                     ""path"": ""1DAxis"",
                     ""interactions"": """",
                     ""processors"": """",
@@ -93,7 +93,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": ""negative"",
-                    ""id"": ""307799b7-00ca-4586-ac96-c6d1111ea3e5"",
+                    ""id"": ""b1e93925-0ee2-4b14-9de1-184cce7f61c5"",
                     ""path"": ""<Gamepad>/leftStick/left"",
                     ""interactions"": """",
                     ""processors"": """",
@@ -104,7 +104,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": ""positive"",
-                    ""id"": ""58eb1dd5-f90e-473c-9132-61d714903a7d"",
+                    ""id"": ""699fd55b-9b3e-426b-9be9-92378d171e7f"",
                     ""path"": ""<Gamepad>/leftStick/right"",
                     ""interactions"": """",
                     ""processors"": """",
@@ -166,7 +166,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""224c0a84-9139-4579-80e9-1956aed1031e"",
-                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""path"": ""<Gamepad>/buttonWest"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",

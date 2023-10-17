@@ -21,5 +21,9 @@ public class PlayerSound : MonoBehaviour
     {
         SoundManager.instance.PlayerSoundClip(playerSoundClips[2]);
     }
+    public void PlayerHurtSound()
+    {
+        SoundManager.instance.PlayerSoundClip(playerSoundClips[3]);
+    }
 
 }
