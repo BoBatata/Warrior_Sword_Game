@@ -29,6 +29,7 @@ public class PlayerBehavior : MonoBehaviour
     private bool isMoving;
     private bool isJumping;
     private bool canJump;
+    private bool gotHitted;
     #endregion
 
     #region Combat
@@ -49,6 +50,7 @@ public class PlayerBehavior : MonoBehaviour
     private int isMovingAnimatorHash;
     private int isJumpingAnimatorHash;
     private int attackAnimatorHash;
+    private int isHittedAnimatorHash;
     #endregion
     #endregion
 
@@ -172,6 +174,15 @@ public class PlayerBehavior : MonoBehaviour
         {
             animator.ResetTrigger(attackAnimatorHash);
         }
+
+        if (gotHitted == true)
+        {
+            animator.SetTrigger(isHittedAnimatorHash);
+        }
+        else if (gotHitted == false)
+        {
+            animator.ResetTrigger(isHittedAnimatorHash);
+        }
     }
 
     private void GetPlayerComponents()
@@ -197,6 +208,8 @@ public class PlayerBehavior : MonoBehaviour
         isMovingAnimatorHash = Animator.StringToHash("isMoving");
         isJumpingAnimatorHash = Animator.StringToHash("isJumping");
         attackAnimatorHash = Animator.StringToHash("attack");
+        isHittedAnimatorHash = Animator.StringToHash("getHitted");
+
     }
 
     public Vector2 GetPlayerPosition()
@@ -207,13 +220,19 @@ public class PlayerBehavior : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         print("Vc tem:" + playerLifes);
-        if (collision.collider.CompareTag("Enemy") || collision.collider.CompareTag("Projectile"))
+        if (collision.collider.CompareTag("Enemy"))
         {
+            canAttack = false;
+            gotHitted = true;
             playerLifes--;
         }
         else if (playerLifes <= 0)
         {
             Destroy(this.gameObject);
+        }
+        else
+        {
+            gotHitted = false;
         }
     }
 
