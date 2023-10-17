@@ -45,6 +45,13 @@ public class EnemyOctuBehavior : MonoBehaviour
         }
     }
 
+    private void PlayFlySound()
+    {
+        audioSource.Stop();
+        audioSource.clip = enemySounds[0];
+        audioSource.Play();
+    }
+
     public void PlayDeathSound()
     {
         audioSource.Stop();

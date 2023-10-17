@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
+using UnityEngine.Serialization;
+using Collider2D = UnityEngine.Collider2D;
 
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(Rigidbody2D))]
@@ -12,9 +14,9 @@ using UnityEngine.Tilemaps;
 
 public class PlayerBehavior : MonoBehaviour
 {
-    private const float gravityValue = -9.81f;  
+    private const float gravityValue = -9.81f;
     private PlayerControls playerControls;
-    public static PlayerBehavior instance; 
+    public static PlayerBehavior instance;
 
     #region Private Variables
     #region PlayerComponents
@@ -34,10 +36,14 @@ public class PlayerBehavior : MonoBehaviour
     #region Combat
     private bool canAttack;
     private bool isAttacking;
+    private bool cooldownIsOver = true;
+    private bool gotHitted;
+    private bool canBeHitted = true;
 
     [Header("Player Status")]
     [SerializeField] private int playerLifes = 3;
-    [SerializeField] private float playerScore;
+    [SerializeField] private int playerScore;
+    [SerializeField] private GameObject playerShield;
 
     [Header("Attack properties")]
     [SerializeField] private Transform hitPoint;
@@ -49,6 +55,7 @@ public class PlayerBehavior : MonoBehaviour
     private int isMovingAnimatorHash;
     private int isJumpingAnimatorHash;
     private int attackAnimatorHash;
+    private int isHittedAnimatorHash;
     #endregion
     #endregion
 
@@ -57,7 +64,7 @@ public class PlayerBehavior : MonoBehaviour
 
     [Header("Jump Properties")]
     [SerializeField] private float jumpForce;
-
+    [FormerlySerializedAs("jumpFallGravityScale")]
     [SerializeField, Range(1f, 10f)] private float jumpFallGravityMultiplier = 3f;
     [SerializeField] private Transform groundCheckPos;
     [SerializeField] private LayerMask groundLayer;
@@ -89,6 +96,7 @@ public class PlayerBehavior : MonoBehaviour
         MovePlayer();
         AnimatePlayer();
         GravityHandler();
+        GetPlayerScore();
     }
 
     private void MovePlayer()
@@ -133,13 +141,15 @@ public class PlayerBehavior : MonoBehaviour
         Collider2D[] hittedEnemies = Physics2D.OverlapCircleAll(hitPoint.position, attackRange, attackMask);
         foreach (Collider2D hittedEnemie in hittedEnemies)
         {
-             if (hittedEnemie.TryGetComponent(out EnemyCrabBehavior enemyCrab))
-             {
+            if (hittedEnemie.TryGetComponent(out EnemyCrabBehavior enemyCrab))
+            {
                 enemyCrab.PlayDeathSound();
-             }
+                playerScore += 10;
+            }
             if (hittedEnemie.TryGetComponent(out EnemyOctuBehavior enemyOctu))
             {
                 enemyOctu.PlayDeathSound();
+                playerScore += 10;
             }
         }
     }
@@ -172,6 +182,7 @@ public class PlayerBehavior : MonoBehaviour
         {
             animator.ResetTrigger(attackAnimatorHash);
         }
+
     }
 
     private void GetPlayerComponents()
@@ -192,24 +203,25 @@ public class PlayerBehavior : MonoBehaviour
         playerControls.Combat.SimpleAttack.canceled += HandleAttack;
     }
 
-    private void GetAnimatorParametersHash()
+
+
+    public int GetPlayerHealth()
     {
-        isMovingAnimatorHash = Animator.StringToHash("isMoving");
-        isJumpingAnimatorHash = Animator.StringToHash("isJumping");
-        attackAnimatorHash = Animator.StringToHash("attack");
+        return playerLifes;
     }
 
-    public Vector2 GetPlayerPosition()
+    public void GetPlayerScore()
     {
-        return transform.position;
+        UIManager.instance.CurrentScore(playerScore);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        print("Vc tem:" + playerLifes);
-        if (collision.collider.CompareTag("Enemy") || collision.collider.CompareTag("Projectile"))
+        if (collision.collider.CompareTag("Enemy") && canBeHitted == true && cooldownIsOver == true)
         {
-            playerLifes--;
+            canAttack = false;
+            cooldownIsOver = false;
+            StartCoroutine(DamageCooldown());
         }
         else if (playerLifes <= 0)
         {
@@ -217,6 +229,47 @@ public class PlayerBehavior : MonoBehaviour
         }
     }
 
+    private void DamageTaken()
+    {
+        gotHitted = true;
+        cooldownIsOver = false;
+        if (gotHitted == true && canBeHitted == true)
+        {
+            animator.SetTrigger(isHittedAnimatorHash);
+            playerSounds.PlayerHurtSound();
+            playerLifes--;
+            gotHitted = false;
+        }
+        else if (gotHitted == false)
+        {
+            animator.ResetTrigger(isHittedAnimatorHash);
+        }
+
+    }
+
+    private IEnumerator DamageCooldown()
+    {
+        DamageTaken();
+        canBeHitted = false;
+        playerShield.gameObject.SetActive(true);
+        yield return new WaitForSeconds(5f);
+        playerShield.gameObject.SetActive(false);
+        canBeHitted = true;
+        gotHitted = false;
+        cooldownIsOver = true;
+    }
+    private void GetAnimatorParametersHash()
+    {
+        isMovingAnimatorHash = Animator.StringToHash("isMoving");
+        isJumpingAnimatorHash = Animator.StringToHash("isJumping");
+        attackAnimatorHash = Animator.StringToHash("attack");
+        isHittedAnimatorHash = Animator.StringToHash("getHitted");
+
+    }
+    public Vector2 GetPlayerPosition()
+    {
+        return transform.position;
+    }
 
     private void GravityHandler()
     {   
@@ -252,7 +305,7 @@ public class PlayerBehavior : MonoBehaviour
 
     private bool IsGrounded()
     {
-        bool isGrounded = Physics2D.OverlapBox(groundCheckPos.position, new Vector3(0.5f, 0.2f), groundLayer);
+        bool isGrounded = Physics2D.OverlapBox(groundCheckPos.position, new Vector2(1f, 0.2f), groundLayer);
         return isGrounded;
     }
     private void OnDrawGizmos()
@@ -261,6 +314,6 @@ public class PlayerBehavior : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(hitPoint.position, attackRange);
         Gizmos.color = Color.blue;
-        Gizmos.DrawWireCube(groundCheckPos.position, new Vector3(0.5f, 0.2f));
+        Gizmos.DrawWireCube(groundCheckPos.position, new Vector3(1f, 0.2f));
     }
 }
