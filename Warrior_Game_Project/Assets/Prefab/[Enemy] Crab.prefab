@@ -52,8 +52,8 @@ MonoBehaviour:
   velocity: 5
   distanceThreshold: 5
   enemySounds:
-  - {fileID: 8300000, guid: 2215fc47391ab2345bff90533fdead18, type: 3}
-  - {fileID: 8300000, guid: 2215fc47391ab2345bff90533fdead18, type: 3}
+  - {fileID: 8300000, guid: 28f18b6d16b978648b3c70a3f7ae1a21, type: 3}
+  - {fileID: 8300000, guid: 7246dad87c0de1f4a8714b8738d85873, type: 3}
 --- !u!212 &7676240961444337102
 SpriteRenderer:
   m_ObjectHideFlags: 0
