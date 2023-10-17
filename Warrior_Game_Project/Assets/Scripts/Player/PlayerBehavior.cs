@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.InputSystem;
+using UnityEngine.Tilemaps;
 using UnityEngine.Serialization;
 using Collider2D = UnityEngine.Collider2D;
 
@@ -29,7 +30,7 @@ public class PlayerBehavior : MonoBehaviour
     private float initialGravityScale;
     private bool isMoving;
     private bool isJumping;
-    private bool isGrounded;
+    private bool canJump;
     #endregion
 
     #region Combat
@@ -92,7 +93,6 @@ public class PlayerBehavior : MonoBehaviour
 
     private void Update()
     {
-        print("isGround: " + isGrounded);
         MovePlayer();
         AnimatePlayer();
         GravityHandler();
@@ -118,7 +118,7 @@ public class PlayerBehavior : MonoBehaviour
 
     private void HandleJump(InputAction.CallbackContext inputContext)
     {
-        if (isGrounded)
+        if (IsGrounded())
         {
             rigidBody.velocity += Vector2.up * jumpForce;
             isJumping = true;
@@ -165,11 +165,11 @@ public class PlayerBehavior : MonoBehaviour
             animator.SetBool(isMovingAnimatorHash, false);
         }
 
-        if (!isGrounded && animator.GetBool(isJumpingAnimatorHash) == false)
+        if (!IsGrounded() && animator.GetBool(isJumpingAnimatorHash) == false)
         {
             animator.SetBool(isJumpingAnimatorHash, true);
         }
-        else if (animator.GetBool(isJumpingAnimatorHash) == true && isGrounded)
+        else if (animator.GetBool(isJumpingAnimatorHash) == true && IsGrounded())
         {
             animator.SetBool(isJumpingAnimatorHash, false);
         }
@@ -203,19 +203,7 @@ public class PlayerBehavior : MonoBehaviour
         playerControls.Combat.SimpleAttack.canceled += HandleAttack;
     }
 
-    private void GetAnimatorParametersHash()
-    {
-        isMovingAnimatorHash = Animator.StringToHash("isMoving");
-        isJumpingAnimatorHash = Animator.StringToHash("isJumping");
-        attackAnimatorHash = Animator.StringToHash("attack");
-        isHittedAnimatorHash = Animator.StringToHash("getHitted");
 
-    }
-
-    public Vector2 GetPlayerPosition()
-    {
-        return transform.position;
-    }
 
     public int GetPlayerHealth()
     {
@@ -239,7 +227,6 @@ public class PlayerBehavior : MonoBehaviour
         {
             Destroy(this.gameObject);
         }
-
     }
 
     private void DamageTaken()
@@ -271,10 +258,22 @@ public class PlayerBehavior : MonoBehaviour
         gotHitted = false;
         cooldownIsOver = true;
     }
+    private void GetAnimatorParametersHash()
+    {
+        isMovingAnimatorHash = Animator.StringToHash("isMoving");
+        isJumpingAnimatorHash = Animator.StringToHash("isJumping");
+        attackAnimatorHash = Animator.StringToHash("attack");
+        isHittedAnimatorHash = Animator.StringToHash("getHitted");
+
+    }
+    public Vector2 GetPlayerPosition()
+    {
+        return transform.position;
+    }
 
     private void GravityHandler()
     {   
-        if (isGrounded)
+        if (IsGrounded())
         {
             isJumping = false;
             canAttack = true;
@@ -304,17 +303,17 @@ public class PlayerBehavior : MonoBehaviour
     }
     #endregion
 
-    //private bool IsGrounded()
-    //{
-    //    bool isGrounded = Physics2D.OverlapBox(groundCheckPos.position, new Vector2(0.5f, 0.2f), groundLayer);
-    //    return isGrounded;
-    //}
+    private bool IsGrounded()
+    {
+        bool isGrounded = Physics2D.OverlapBox(groundCheckPos.position, new Vector2(1f, 0.2f), groundLayer);
+        return isGrounded;
+    }
     private void OnDrawGizmos()
     {
         if (hitPoint == null) return;
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(hitPoint.position, attackRange);
-        //Gizmos.color = Color.green;
-        //Gizmos.DrawWireCube(groundCheckPos.position, new Vector3(0.5f, 0.2f));
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireCube(groundCheckPos.position, new Vector3(1f, 0.2f));
     }
 }

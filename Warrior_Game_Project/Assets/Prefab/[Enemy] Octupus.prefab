@@ -102,7 +102,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   velocity: 2
-  distanceThreshold: 10
+  distanceThreshold: 7
   enemySounds:
   - {fileID: 8300000, guid: 437671679c3919345abf858af7d37ee7, type: 3}
   - {fileID: 8300000, guid: 7246dad87c0de1f4a8714b8738d85873, type: 3}
